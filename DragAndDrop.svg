@@ -24,6 +24,20 @@
       var BackDrop = null;
       var DragTarget = null;
 
+	  var c1 = null;
+	   var c2 = null;
+	   var gc1=null;
+	   var gc2=null;
+	   var r=document.getElementById("rc1c2");
+	   var rect=null;
+	   var sxa = null;
+	   var sya = null;
+	   var txa = null;
+	   var tya = null;
+	   var lastsx=null;
+	   var lastsy=null;
+	   var lasttx=null;
+	   var lastty=null;
       function Init(evt)
       {
          SVGDocument = evt.target.ownerDocument;
@@ -39,11 +53,32 @@
          //    (instead of the dragged element) prevents the dragged element
          //    from being inadvertantly dropped when the mouse is moved rapidly
          BackDrop = SVGDocument.getElementById('BackDrop');
+		 gc1 = document.getElementById("gc1");
+		 gc2 = document.getElementById("gc2");
       }
 
       function Grab(evt)
       {
+			rect=null;
          // find out which element we moused down on
+		 sxa=null;
+		 sya=null;
+		 txa=null;
+		 tya=null;
+		 if(evt.target.parentNode == gc1)
+		 {
+		  sxa = -1;
+		  sya = -1;
+		  //alert("a");
+		  }
+		 else if(evt.target.parentNode == gc2)
+		 {
+		  txa = -1;
+		  tya =-1;
+		  //alert("b");
+		  }
+		  else return;
+		 
          var targetElement = evt.target.parentNode;
 
          // you cannot drag the background itself, so ignore any attempts to mouse down on it
@@ -67,8 +102,11 @@
             //    so that we only apply the differential between the current location
             //    and the new location
             var transMatrix = DragTarget.getCTM();
+			//alert(Number(transMatrix.e));
+			
             GrabPoint.x = TrueCoords.x - Number(transMatrix.e);
             GrabPoint.y = TrueCoords.y - Number(transMatrix.f);
+			
 
          }
       };
@@ -76,9 +114,11 @@
 
       function Drag(evt)
       {
+	     //alert(rect);
          // account for zooming and panning
+		 if(sxa==null && txa==null)
+			return;
          GetTrueCoords(evt);
-
          // if we don't currently have an element in tow, don't do anything
          if (DragTarget)
          {
@@ -90,13 +130,34 @@
             // apply a new tranform translation to the dragged element, to display
             //    it in its new location
             DragTarget.setAttributeNS(null, 'transform', 'translate(' + newX + ',' + newY + ')');
+			if(sxa!=null)
+				sxa=newX;
+			if(sya!=null)
+				sya=newY;
+			if(txa!=null)
+				txa=newX;
+			if(tya!=null)
+				tya=newY;
+			SetRelation();
+			//var rectx = parseInt(parseInt(rect.getAttribute('x'))+parseInt(newX));
+			//var recty = parseInt(parseInt(rect.getAttribute('y'))+parseInt(newY));
+			//rect.setAttribute('x',rectx);
+			//rect.setAttribute('y',recty);
+			//alert("parse");
+			
+			
+			
+			
+			//rect.setAttribute('x',rectx);
+			//rect.setAttribute('y',recty);
          }
       };
-
 
       function Drop(evt)
       {
          // if we aren't currently dragging an element, don't do anything
+		 if(sxa==null && txa==null)
+			return;
          if ( DragTarget )
          {
             // since the element currently being dragged has its pointer-events turned off,
@@ -123,7 +184,7 @@
             //    grab the next element
             DragTarget = null;
          }
-	SetRelation(evt);
+	//SetRelation(evt);
       };
 
 
@@ -136,28 +197,59 @@
          TrueCoords.x = (evt.clientX - translation.x)/newScale;
          TrueCoords.y = (evt.clientY - translation.y)/newScale;
       };
-	function SetRelation(evt)
+	function SetRelation()
 	{
-
 		var r = document.getElementById("rc1c2");
 		var s = document.getElementById("c1");
 		var t = document.getElementById("c2");
-		var sx = s.getAttributeNS('x');
-		var sy = s.getAttributeNS('y');
-		var tx = t.getAttributeNS('x');
-		var ty = t.getAttributeNS('y');
-
-		alert(evt.target.getAttribute('id'));
-		if(evt.target == s.parentNode)
-		        alert("sx "+sx);
-		var scx = sx+s.getAttribute('width')/2;
-		var scy = sy+s.getAttribute('height')/2;
-		var tcx = tx+t.getAttribute('width')/2;
-		var tcy = ty+t.getAttribute('height')/2;
-		r.setAttribute('x1',scx);
-		r.setAttribute('y1',scy);
-		r.setAttribute('x2',tcx);
-		r.setAttribute('y2',tcy);
+		var sx = s.getAttribute('x');
+		var sy = s.getAttribute('y');
+		var tx = t.getAttribute('x');
+		var ty = t.getAttribute('y');
+		var sw = s.getAttribute('width');
+		var sh = s.getAttribute('height');
+		var tw = t.getAttribute('width');
+		var th = t.getAttribute('height');
+		sx = parseInt(sx)+(parseInt(sw)/2);
+		sy = parseInt(sy)+(parseInt(sh)/2);
+		tx = parseInt(tx)+(parseInt(tw)/2);
+		ty = parseInt(ty)+(parseInt(th)/2);
+		if(sxa!=null)
+		{
+		
+			sx = parseInt(sx)+parseInt(sxa);
+			sy = parseInt(sy)+parseInt(sya);
+			if(lasttx!=null)
+			{
+				tx=parseInt(lasttx);
+			}
+			if(lastty!=null)
+			{
+				ty=parseInt(lastty);
+			}
+		}
+		if(txa!=null)
+		{
+			tx = parseInt(tx)+parseInt(txa);
+			ty = parseInt(ty)+parseInt(tya);
+			if(lastsx!=null)
+			{
+				sx=parseInt(lastsx);
+			}
+			if(lastsy!=null)
+			{
+				sy=parseInt(lastsy);
+			}
+		}
+		lastsx=sx;
+		lastsy=sy;
+		lasttx=tx;
+		lastty=ty;
+		r.setAttribute('x1',sx);
+		r.setAttribute('y1',sy);
+		r.setAttribute('x2',tx);
+		r.setAttribute('y2',ty);
+		
 	}
 
 
@@ -165,27 +257,27 @@
 
    <rect id='BackDrop' x='-10%' y='-10%' width='110%' height='110%' fill='none' pointer-events='all' />
 
-   <line id="rc1c2" x1="135" y1="110" x2="485" y2="110" stroke="black" stroke-width="2" />
+   <line id="rc1c2" x1="135" y1="110" x2="500" y2="110" stroke="black" stroke-width="2" />
 <g id="gc1">
-	<rect id="c1" x="50" y="50" width="170" height="120"
+	<rect id="c1"  class="rect" x="50" y="50" width="200" height="120"
 stroke="black" stroke-width="2"
 fill="yellow" fill-opacity="1" />
 	<text x="60" y="75" font-family="Verdana" font-size="20">Class A</text>
-	<line x1="50" y1="87" x2="220" y2="87" stroke="black" stroke-width="2" />
+	<line x1="50" y1="87" x2="250" y2="87" stroke="black" stroke-width="2" />
 	<text x="60" y="105" font-family="Verdana" font-size="15">-private attribute</text>
 	<text x="60" y="120" font-family="Verdana" font-size="15">-public attribute</text>
-	<line x1="50" y1="135" x2="220" y2="135" stroke="black" stroke-width="2" />
+	<line x1="50" y1="135" x2="250" y2="135" stroke="black" stroke-width="2" />
 	<text x="60" y="150" font-family="Verdana" font-size="15">+interface(param:string)</text>
 </g>
 <g id="gc2">
-	<rect id="c2" x="400" y="50" width="170" height="120"
+	<rect id="c2" class="rect" x="400" y="50" width="200" height="120"
 stroke="black" stroke-width="2"
 fill="lightgreen" fill-opacity="1" />
 	<text x="410" y="75" font-family="Verdana" font-size="20">Class B</text>
-	<line x1="400" y1="87" x2="570" y2="87" stroke="black" stroke-width="2" />
+	<line x1="400" y1="87" x2="600" y2="87" stroke="black" stroke-width="2" />
 	<text x="410" y="105" font-family="Verdana" font-size="15">-private attribute</text>
 	<text x="410" y="120" font-family="Verdana" font-size="15">-public attribute</text>
-	<line x1="400" y1="135" x2="570" y2="135" stroke="black" stroke-width="2" />
+	<line x1="400" y1="135" x2="600" y2="135" stroke="black" stroke-width="2" />
 	<text x="410" y="150" font-family="Verdana" font-size="15">+interface(param:string)</text>
 </g>
 
